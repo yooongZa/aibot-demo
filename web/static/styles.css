@@ -177,61 +177,56 @@ footer p { margin: 4px 0; }
 /* ---------------------------------------------------------------- */
 /* Chainlit Copilot widget overlay fix                               */
 /* ---------------------------------------------------------------- */
-/* The default Chainlit Copilot mounts with a transparent background */
-/* which makes the underlying landing page bleed through. We force   */
-/* an opaque chat window on top of a dimmed backdrop.                */
+/* Force the widget's chat window itself to be opaque. We do NOT     */
+/* render a separate backdrop because we can't reliably guarantee it */
+/* layers below the widget across Chainlit versions; instead we make */
+/* the widget fully opaque so nothing bleeds through.                */
 
-.copilot-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 9998;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-.copilot-backdrop.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Chainlit Copilot injects a root with id chainlit-copilot or class */
-/* .cl-copilot. We target both defensively.                          */
 #chainlit-copilot,
 .cl-copilot,
 [id*="chainlit-copilot"] {
-  z-index: 9999 !important;
+  z-index: 2147483000 !important;
 }
 
-/* The chat window itself — Chainlit uses several internal class     */
-/* names across versions; target with attribute-selectors.           */
-#chainlit-copilot > *,
-.cl-copilot > *,
+/* Every descendant: opaque white background, inherit text colour.   */
+/* This is defensive across Chainlit versions where internal class   */
+/* names are hashed. iframes get white bg at the element level too.  */
+#chainlit-copilot [class*="window"],
+#chainlit-copilot [class*="Window"],
+#chainlit-copilot [class*="container"],
+#chainlit-copilot [class*="Container"],
+#chainlit-copilot [class*="dialog"],
+#chainlit-copilot [class*="Dialog"],
+#chainlit-copilot [class*="chat"],
+#chainlit-copilot [class*="Chat"],
+#chainlit-copilot [role="dialog"],
+#chainlit-copilot iframe,
 [id*="chainlit-copilot"] [class*="window"],
 [id*="chainlit-copilot"] [class*="Window"],
 [id*="chainlit-copilot"] [class*="container"],
 [id*="chainlit-copilot"] [class*="Container"],
+[id*="chainlit-copilot"] [class*="dialog"],
+[id*="chainlit-copilot"] [class*="Dialog"],
+[id*="chainlit-copilot"] [class*="chat"],
+[id*="chainlit-copilot"] [class*="Chat"],
+[id*="chainlit-copilot"] [role="dialog"],
 [id*="chainlit-copilot"] iframe {
+  background-color: #ffffff !important;
   background: #ffffff !important;
-  color: var(--text) !important;
 }
 
-/* Give the popup window a nice shadow + border-radius so it stands  */
-/* off the backdrop.                                                 */
+/* Give the popup a comfortable shadow + border so it stands out.    */
 #chainlit-copilot [role="dialog"],
-[id*="chainlit-copilot"] [role="dialog"],
-[id*="chainlit-copilot"] > div > div {
-  background: #ffffff !important;
+[id*="chainlit-copilot"] [role="dialog"] {
   border-radius: 16px !important;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25) !important;
   border: 1px solid var(--border) !important;
   overflow: hidden !important;
 }
 
-/* On desktop, size the widget as a comfortable side panel; on       */
-/* mobile, take the full viewport minus small padding.               */
+/* Size the widget so it is a readable panel on desktop and nearly   */
+/* full-screen on mobile. Chainlit's default opens a small corner    */
+/* window that can be hard to read for long product tables.          */
 @media (min-width: 768px) {
   #chainlit-copilot [role="dialog"],
   [id*="chainlit-copilot"] [role="dialog"] {
