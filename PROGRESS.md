@@ -44,7 +44,7 @@
 
 ```
 INIT → PRIMARY → ASK_MORE → SECONDARY → CLOSE → POST
-(환영)  (1차추천)  (추가확인)  (2차추천)   (요약+CTA) (후속Q&A)
+(환영)  (1차추천)  (추가확인)  (2차추천)   (베이스 표+구매) (후속Q&A)
 ```
 
 각 단계별로 프롬프트 지시 내용이 다름. 전이는 규칙 기반 (`flow.py:next_stage`).
@@ -60,10 +60,12 @@ INIT → PRIMARY → ASK_MORE → SECONDARY → CLOSE → POST
 
 ### UX
 - 빠른 시작 버튼 5개 (#피로 / #눈 / #관절 / #장 / #면역)
-- 피드백 👍/👎 버튼 (SQLite 로깅)
+- 제품 추천을 마크다운 **표**로 노출 (PRIMARY / SECONDARY / CLOSE 베이스 제품)
+- 추천마다 🛒 구입 · 🔄 다른 제품 확인 · 💬 자유 입력 **3-버튼** 액션
+- 세션 **구매 카트**: 구입 버튼 → 카트 누적 → 베이스 제품 구매 시 최종 요약 표 + 구매 페이지/문의 링크
+- 피드백 👍/👎 버튼 (SQLite 로깅, 호환 유지)
 - 사용자 프로필 입력 (연령·성별·임신·복약) → 안전 가이드 프롬프트 주입
-- CLOSE 단계 요약 카드 + CTA (구매 문의·제품 상세·정기구독·전문 상담사·새 상담)
-- 단계·니즈·추천 이력 접이식 Step 패널
+- 단계·니즈·추천 이력·구매 카트 접이식 Step 패널
 
 ### 안전성
 - 임신·복약(와파린) 기반 원료 금기 안내
@@ -75,6 +77,7 @@ INIT → PRIMARY → ASK_MORE → SECONDARY → CLOSE → POST
 - SQLite 로깅 (sessions / turns / feedback 3테이블)
 - 옵션형 password 인증 (`AUTH_ENABLED=1`)
 - Docker + HF Spaces 배포
+- **main push → HF Space 자동 동기화** (`.github/workflows/hf-sync.yml`, HF_TOKEN secret 필요)
 - 36 pytest 테스트 (detect_needs, pipeline, flow, prompts, db)
 
 ## 📁 파일 구조
@@ -97,6 +100,7 @@ aibot-demo/
 ├── chainlit.md                     Chainlit 환영 페이지
 ├── .chainlit/config.toml           Chainlit 설정 (allow_origins 등)
 ├── .github/workflows/pages.yml     GH Pages 자동 배포
+├── .github/workflows/hf-sync.yml   main → HF Space 자동 동기화
 ├── Dockerfile                      HF Spaces 실행 (포트 7860)
 ├── README.md                       HF Spaces 프론트매터 + 프로젝트 소개
 ├── web/
@@ -126,6 +130,7 @@ aibot-demo/
 3. **HF Spaces 업로드 실패** — `colorTo: emerald`가 유효하지 않아 `blue`로 변경.
 4. **zsh 파싱 에러** — `interactive_comments` off 환경이라 `#` 주석이 에러. `CLAUDE.md`에 "복붙용 셸 스니펫 규칙" 기록.
 5. **`NotFound` from Gemini** — `gemini-2.0-flash` 접근 불가 → Space 환경변수 `GEMINI_MODEL=gemini-2.5-flash` 로 변경.
+6. **HF Space가 main과 동기화되지 않음** — 초기에는 `git push hf` 수동 푸시만 가능했음. `.github/workflows/hf-sync.yml` 추가해 GitHub Actions에서 자동 푸시하도록 함 (HF_TOKEN secret 필요).
 
 ## 🔮 후속 제안
 
