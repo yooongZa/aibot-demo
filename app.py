@@ -13,8 +13,10 @@ from data import (
 )
 from db import init_db, log_feedback, log_session_start, log_turn
 from flow import (
+    STAGE_ASK_MORE,
     STAGE_CLOSE,
     STAGE_LABELS,
+    STAGE_POST,
     STAGE_PRIMARY,
     STAGE_SECONDARY,
     FlowState,
@@ -72,43 +74,86 @@ def _get_feedback() -> list[dict]:
     return fb
 
 
-def _format_product_card(p: dict) -> str:
-    lines = [f"**{p.get('제품명', '')}**"]
-    for ing in p.get("주요_원료", [])[:3]:
-        lines.append(f"- {ing.get('이름', '')} · {ing.get('함량', '')}")
-    needs = p.get("연관_니즈", [])
-    if needs:
-        lines.append("_" + " · ".join(f"#{n}" for n in needs) + "_")
+def _get_purchase_cart() -> list[str]:
+    cart = cl.user_session.get("purchase_cart")
+    if cart is None:
+        cart = []
+        cl.user_session.set("purchase_cart", cart)
+    return cart
+
+
+def _format_products_table(products: list[dict], title: str = "추천 제품") -> str:
+    """Render a list of products as a single markdown comparison table."""
+    if not products:
+        return ""
+    lines = [f"##### 📋 {title}", ""]
+    lines.append("| 제품명 | 주요 원료 | 연관 니즈 |")
+    lines.append("|---|---|---|")
+    for p in products:
+        name = f"**{p.get('제품명', '')}**"
+        ings = "<br>".join(
+            f"{i.get('이름', '')} · {i.get('함량', '')}".strip()
+            for i in p.get("주요_원료", [])[:4]
+        )
+        needs = " · ".join(f"#{n}" for n in p.get("연관_니즈", []))
+        lines.append(f"| {name} | {ings} | {needs} |")
     return "\n".join(lines)
 
 
-def _format_product_cards_block(products: list[dict], title: str = "관련 제품") -> str:
-    if not products:
+def _format_base_product_table(base: dict) -> str:
+    """Detailed table view for the base product shown in the CLOSE stage."""
+    if not base:
         return ""
-    parts = [f"##### {title}"]
-    for p in products:
-        parts.append("> " + _format_product_card(p).replace("\n", "\n> "))
-    return "\n\n".join(parts)
+    lines = [
+        f"##### 🌿 매일의 기본 영양 — {base.get('제품명', '')}",
+        "",
+        "| 항목 | 내용 |",
+        "|---|---|",
+        f"| **제품명** | {base.get('제품명', '')} |",
+    ]
+    ings = base.get("주요_원료", [])
+    if ings:
+        ing_text = "<br>".join(
+            f"• {i.get('이름', '')} · {i.get('함량', '')}" for i in ings[:10]
+        )
+        lines.append(f"| **주요 원료** | {ing_text} |")
+    needs = base.get("연관_니즈", [])
+    if needs:
+        lines.append(f"| **연관 니즈** | {' · '.join(needs)} |")
+    lines.append("| **권장** | 종합 비타민·미네랄 베이스로 매일 꾸준히 섭취 |")
+    return "\n".join(lines)
 
 
-def _format_summary_block(
-    products_by_name: dict[str, dict], base: dict | None
-) -> str:
-    lines = ["#### 🛒 오늘의 추천 요약", "", "**상담 중 추천드린 제품**"]
-    if products_by_name:
-        for p in products_by_name.values():
-            ings = ", ".join(i.get("이름", "") for i in p.get("주요_원료", [])[:3])
-            lines.append(f"- **{p['제품명']}** — {ings}")
+def _format_final_summary(cart: list[str], products: list[dict]) -> str:
+    """Final purchase summary table after the user finalizes selections."""
+    by_name = {p["제품명"]: p for p in products}
+    lines = [
+        "#### 🎉 구매 내역 정리",
+        "",
+        "지금까지 선택해 주신 제품 목록입니다. 아래 링크에서 바로 구매를 진행하실 수 있어요.",
+        "",
+        "| 제품명 | 주요 원료 |",
+        "|---|---|",
+    ]
+    if cart:
+        for name in cart:
+            p = by_name.get(name)
+            ings = (
+                ", ".join(i.get("이름", "") for i in p.get("주요_원료", [])[:3])
+                if p
+                else "—"
+            )
+            lines.append(f"| **{name}** | {ings} |")
     else:
-        lines.append("- 추천된 제품이 없습니다.")
+        lines.append("| _선택된 제품이 없습니다._ | — |")
 
-    if base:
-        lines.append("")
-        lines.append("**🌿 매일의 기본 영양은 `뉴트리시파이 데일리 베이스`로 시작하세요**")
-        ings = ", ".join(i.get("이름", "") for i in base.get("주요_원료", [])[:5])
-        lines.append(f"_핵심 원료: {ings}_")
-        lines.append("_비타민·미네랄 종합 베이스로 꾸준한 섭취를 권장합니다._")
-
+    lines.extend(
+        [
+            "",
+            f"👉 **[구매 페이지로 이동]({CATALOG_URL})**",
+            f"📩 [이메일로 구매 문의 보내기]({PURCHASE_URL})",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -123,22 +168,38 @@ def _quick_start_actions() -> list[cl.Action]:
     ]
 
 
-def _cta_actions() -> list[cl.Action]:
+def _recommendation_actions(product_names: list[str]) -> list[cl.Action]:
+    """Three action buttons shown beneath every product recommendation table."""
     return [
         cl.Action(
-            name="purchase_inquiry",
-            label="📩 구매 문의하기",
-            payload={"url": PURCHASE_URL},
+            name="buy_products",
+            label="🛒 구입",
+            payload={"products": product_names},
         ),
         cl.Action(
-            name="product_details",
-            label="🔎 제품 자세히 보기",
+            name="view_other_products",
+            label="🔄 다른 제품 확인",
+            payload={"products": product_names},
+        ),
+        cl.Action(
+            name="free_inquiry",
+            label="💬 자유 입력 (추가 문의)",
+            payload={},
+        ),
+    ]
+
+
+def _final_actions() -> list[cl.Action]:
+    return [
+        cl.Action(
+            name="open_catalog",
+            label="🛍 구매 페이지 열기",
             payload={"url": CATALOG_URL},
         ),
         cl.Action(
-            name="subscribe",
-            label="🎁 정기구독 1개월 무료 체험",
-            payload={},
+            name="purchase_inquiry",
+            label="📩 구매 문의 이메일",
+            payload={"url": PURCHASE_URL},
         ),
         cl.Action(
             name="escalate_human",
@@ -153,21 +214,6 @@ def _cta_actions() -> list[cl.Action]:
     ]
 
 
-def _feedback_actions(turn_id: str, products: list[str]) -> list[cl.Action]:
-    return [
-        cl.Action(
-            name="feedback",
-            label="👍 도움됐어요",
-            payload={"turn_id": turn_id, "rating": "up", "products": products},
-        ),
-        cl.Action(
-            name="feedback",
-            label="👎 별로예요",
-            payload={"turn_id": turn_id, "rating": "down", "products": products},
-        ),
-    ]
-
-
 async def _send_stage_step(flow: FlowState) -> None:
     label = STAGE_LABELS.get(flow.stage, flow.stage)
     detail_lines = [f"- **진행 단계**: {label}"]
@@ -177,6 +223,9 @@ async def _send_stage_step(flow: FlowState) -> None:
         detail_lines.append(
             "- **추천 이력**: " + ", ".join(flow.recommended_products)
         )
+    cart = _get_purchase_cart()
+    if cart:
+        detail_lines.append("- **구매 카트**: " + ", ".join(cart))
     profile = cl.user_session.get("user_profile")
     if profile:
         detail_lines.append("- **프로필**: " + str(profile))
@@ -250,6 +299,7 @@ async def on_chat_start() -> None:
     cl.user_session.set("feedback", [])
     cl.user_session.set("user_profile", None)
     cl.user_session.set("turn_index", 0)
+    cl.user_session.set("purchase_cart", [])
     log_session_start(session_id, None)
 
     await _setup_chat_settings()
@@ -320,24 +370,21 @@ async def _process_user_turn(user_input: str) -> None:
             for p in new_cards:
                 flow.recommended_products.append(p["제품명"])
             if new_cards:
-                turn_id = f"{flow.stage}-{len(history)}"
+                title = "1차 추천 제품" if flow.stage == STAGE_PRIMARY else "추가 추천 제품"
                 await cl.Message(
-                    content=_format_product_cards_block(new_cards),
-                    actions=_feedback_actions(turn_id, [p["제품명"] for p in new_cards]),
+                    content=_format_products_table(new_cards, title=title),
+                    actions=_recommendation_actions([p["제품명"] for p in new_cards]),
                 ).send()
 
         elif flow.stage == STAGE_CLOSE:
             if BASE_PRODUCT_NAME not in flow.recommended_products:
                 flow.recommended_products.append(BASE_PRODUCT_NAME)
-            by_name = {
-                name: next((p for p in products if p["제품명"] == name), None)
-                for name in flow.recommended_products
-            }
-            by_name = {k: v for k, v in by_name.items() if v}
-            await cl.Message(
-                content=_format_summary_block(by_name, get_base_product(products)),
-                actions=_cta_actions(),
-            ).send()
+            base = get_base_product(products)
+            if base:
+                await cl.Message(
+                    content=_format_base_product_table(base),
+                    actions=_recommendation_actions([BASE_PRODUCT_NAME]),
+                ).send()
 
         await _send_stage_step(flow)
 
@@ -378,6 +425,88 @@ async def on_quick_start(action: cl.Action) -> None:
         return
     await cl.Message(content=seed, author="user").send()
     await _process_user_turn(seed)
+
+
+@cl.action_callback("buy_products")
+async def on_buy_products(action: cl.Action) -> None:
+    selected: list[str] = list(action.payload.get("products", []) or [])
+    cart = _get_purchase_cart()
+    added = [p for p in selected if p not in cart]
+    cart.extend(added)
+    cl.user_session.set("purchase_cart", cart)
+
+    flow = _get_flow()
+    products = load_products()
+
+    # 베이스 제품을 구입하면 상담 종료 → 최종 구매 요약
+    if BASE_PRODUCT_NAME in selected or flow.stage == STAGE_POST:
+        await cl.Message(
+            content=_format_final_summary(cart, products),
+            actions=_final_actions(),
+        ).send()
+        return
+
+    # 그 외에는 다음 니즈를 묻고 SECONDARY 흐름으로 유도
+    flow.stage = STAGE_ASK_MORE
+    cl.user_session.set("flow", flow)
+
+    msg_lines = []
+    if added:
+        msg_lines.append(f"🛒 장바구니에 담았어요: **{', '.join(added)}**")
+    msg_lines.append("")
+    msg_lines.append(
+        "혹시 함께 관리하고 싶은 **다른 증상**이 있으신가요? "
+        "있다면 편하게 말씀해 주세요. 없으시면 \"없어요\"라고 답해주시면 "
+        "기본 영양 보충 제품을 안내해 드릴게요."
+    )
+    await cl.Message(content="\n".join(msg_lines)).send()
+
+
+@cl.action_callback("view_other_products")
+async def on_view_other_products(action: cl.Action) -> None:
+    shown = list(action.payload.get("products", []) or [])
+    products = load_products()
+    others = [
+        p
+        for p in products
+        if p["제품명"] not in shown and p["제품명"] != BASE_PRODUCT_NAME
+    ]
+    if not others:
+        await cl.Message(
+            content=(
+                "현재 안내해 드릴 다른 제품이 없습니다. "
+                "원하시는 다른 증상이나 원료를 직접 입력해 주세요."
+            )
+        ).send()
+        return
+
+    next_batch = others[:3]
+    await cl.Message(
+        content=_format_products_table(next_batch, title="다른 추천 제품"),
+        actions=_recommendation_actions([p["제품명"] for p in next_batch]),
+    ).send()
+
+
+@cl.action_callback("free_inquiry")
+async def on_free_inquiry(action: cl.Action) -> None:
+    await cl.Message(
+        content=(
+            "💬 추가로 궁금하신 점이나 다른 증상을 자유롭게 입력해 주세요.\n"
+            "_예: \"임신 중인데 안전한가요?\", \"변비도 같이 있어요\" 등_"
+        )
+    ).send()
+
+
+@cl.action_callback("open_catalog")
+async def on_open_catalog(action: cl.Action) -> None:
+    url = action.payload.get("url", CATALOG_URL)
+    await cl.Message(
+        content=(
+            "🛍 **구매 페이지로 이동하세요!**\n\n"
+            f"👉 [{url}]({url})\n\n"
+            "장바구니에 담긴 제품을 한 번에 확인하실 수 있습니다."
+        )
+    ).send()
 
 
 @cl.action_callback("feedback")
@@ -455,6 +584,7 @@ async def on_reset_chat(action: cl.Action) -> None:
     cl.user_session.set("flow", FlowState())
     cl.user_session.set("history", [])
     cl.user_session.set("feedback", [])
+    cl.user_session.set("purchase_cart", [])
     await cl.Message(
         content="새 상담을 시작했습니다. 다시 건강 고민을 말씀해 주세요. 🌿",
         actions=_quick_start_actions(),
