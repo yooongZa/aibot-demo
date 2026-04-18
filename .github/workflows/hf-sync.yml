@@ -1,0 +1,41 @@
+name: Sync to Hugging Face Space
+
+# main에 푸시되면 자동으로 HF Space에 코드를 동기화합니다.
+# 최초 1회, GitHub 저장소 Settings → Secrets and variables → Actions 에
+# `HF_TOKEN` 을 추가해야 동작합니다.
+# 수동 실행도 가능 — Actions 탭에서 "Run workflow" 버튼으로 트리거.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: hf-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USERNAME: YongZa
+          HF_SPACE: aibot-demo
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::HF_TOKEN secret is not set. Add it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git push --force \
+            "https://${HF_USERNAME}:${HF_TOKEN}@huggingface.co/spaces/${HF_USERNAME}/${HF_SPACE}" \
+            HEAD:main
