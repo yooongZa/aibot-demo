@@ -1,0 +1,32 @@
+[project]
+enable_telemetry = false
+session_timeout = 3600
+cache = false
+user_env = []
+# Allowed origins for the embeddable copilot widget. Add your deployed
+# landing-page domain here (e.g. https://yooongza.github.io) before going live.
+allow_origins = ["*"]
+
+[features]
+unsafe_allow_html = false
+latex = false
+auto_tag_thread = true
+
+[features.spontaneous_file_upload]
+enabled = false
+
+[UI]
+name = "건강기능식품 상담 챗봇"
+default_collapse_content = true
+cot = "hidden"
+
+[UI.theme]
+default = "light"
+
+[meta]
+generated_by = "1.3.0"
+
+# To enable Literal AI cloud observability (prompt traces, A/B, token cost):
+# 1. Sign up at https://literalai.com
+# 2. Add LITERAL_API_KEY=<your_key> to .env
+# 3. Restart chainlit — traces appear automatically, no code change needed

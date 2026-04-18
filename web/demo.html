@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>데모 시나리오 — 뉴트리시파이</title>
+  <link rel="stylesheet" href="./static/styles.css" />
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="./index.html" class="logo" style="text-decoration:none">🌿 뉴트리시파이</a>
+    <div class="nav-links">
+      <a href="./index.html">홈</a>
+      <a href="./about.html">서비스 소개</a>
+      <a href="./demo.html">데모 시나리오</a>
+      <a href="./products.html">제품 라인업</a>
+    </div>
+    <button class="nav-cta" onclick="openCopilot()">상담 시작</button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <span class="hero-badge">🎬 사전 준비된 데모 시나리오</span>
+    <h1>이런 질문을 <span>해보세요</span></h1>
+    <p>아래 예시 문구를 복사해 우측 하단 챗봇에 입력해 보세요.</p>
+  </div>
+</header>
+
+<section>
+  <div class="container">
+    <div class="product-grid">
+      <div class="product">
+        <span class="product-tag">시나리오 1</span>
+        <h3>피로 + 면역력 복합</h3>
+        <p style="color: var(--muted); font-size: 14px; margin: 12px 0;">
+          "요즘 너무 피곤하고 자주 감기에 걸려요"
+        </p>
+        <p style="font-size: 13px; color: var(--primary-dark);">
+          → 에너지 부스트업(홍삼) + 장 프로텍션(프로바이오틱스) + 데일리 베이스 추천
+        </p>
+      </div>
+      <div class="product">
+        <span class="product-tag">시나리오 2</span>
+        <h3>눈 + 부정어 처리</h3>
+        <p style="color: var(--muted); font-size: 14px; margin: 12px 0;">
+          "피로는 괜찮은데 눈이 뻑뻑하고 침침해요"
+        </p>
+        <p style="font-size: 13px; color: var(--primary-dark);">
+          → 부정어 ("괜찮은데") 인식, 피로 제외하고 눈 건강만 추천
+        </p>
+      </div>
+      <div class="product">
+        <span class="product-tag">시나리오 3</span>
+        <h3>관절 + "안 좋아요"</h3>
+        <p style="color: var(--muted); font-size: 14px; margin: 12px 0;">
+          "관절이 안 좋아서 계단 오르기 힘들어요"
+        </p>
+        <p style="font-size: 13px; color: var(--primary-dark);">
+          → "안" 부정어가 아닌 증상 신호로 인식, 관절 토탈 케어 추천
+        </p>
+      </div>
+      <div class="product">
+        <span class="product-tag">시나리오 4</span>
+        <h3>임신 중 안전성 체크</h3>
+        <p style="color: var(--muted); font-size: 14px; margin: 12px 0;">
+          (설정 → 임신/수유 중 체크 후) "피로해서 비타민 A 추천 부탁해요"
+        </p>
+        <p style="font-size: 13px; color: var(--primary-dark);">
+          → 비타민 A 고용량 임신 중 주의 안내 자동 포함
+        </p>
+      </div>
+      <div class="product">
+        <span class="product-tag">시나리오 5</span>
+        <h3>복약 중 안전성 체크</h3>
+        <p style="color: var(--muted); font-size: 14px; margin: 12px 0;">
+          (설정 → 복약 "와파린" 입력 후) "혈행 개선 도와주세요"
+        </p>
+        <p style="font-size: 13px; color: var(--primary-dark);">
+          → 비타민 K·오메가3·은행잎 항응고제 상호작용 경고 포함
+        </p>
+      </div>
+      <div class="product">
+        <span class="product-tag">시나리오 6</span>
+        <h3>경쟁 제품 차별점</h3>
+        <p style="color: var(--muted); font-size: 14px; margin: 12px 0;">
+          "락토핏 같은 유산균 제품 사용 중인데 자사 제품은 어떤가요?"
+        </p>
+        <p style="font-size: 13px; color: var(--primary-dark);">
+          → Market_Products.json 기반으로 자사 장 프로텍션의 차별점 설명
+        </p>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 60px;">
+      <button class="hero-cta" onclick="openCopilot()">💬 챗봇 열고 시작하기</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>🌿 뉴트리시파이 (Nutrify)</strong> — AI 기반 건강기능식품 맞춤 상담 (테스트 페이지)</p>
+  <p>© 2026 Nutrify Demo · <a href="./index.html" style="color: var(--muted)">홈</a> · <a href="./about.html" style="color: var(--muted)">소개</a> · <a href="./products.html" style="color: var(--muted)">제품</a></p>
+</footer>
+
+<script src="./static/copilot.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>제품 라인업 — 뉴트리시파이</title>
+  <link rel="stylesheet" href="./static/styles.css" />
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="./index.html" class="logo" style="text-decoration:none">🌿 뉴트리시파이</a>
+    <div class="nav-links">
+      <a href="./index.html">홈</a>
+      <a href="./about.html">서비스 소개</a>
+      <a href="./demo.html">데모 시나리오</a>
+      <a href="./products.html">제품 라인업</a>
+    </div>
+    <button class="nav-cta" onclick="openCopilot()">상담 시작</button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <span class="hero-badge">📦 전체 제품</span>
+    <h1>뉴트리시파이 <span>제품 라인업</span></h1>
+    <p>총 7종의 자사 건강기능식품. 상담을 통해 본인에게 맞는 제품을 찾아보세요.</p>
+  </div>
+</header>
+
+<section>
+  <div class="container">
+    <div class="product-grid" id="product-list">
+      <!-- products load here from /api/products -->
+    </div>
+    <div style="text-align: center; margin-top: 40px;">
+      <button class="hero-cta" onclick="openCopilot()">💬 맞춤 상담 받기</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>🌿 뉴트리시파이 (Nutrify)</strong> — AI 기반 건강기능식품 맞춤 상담 (테스트 페이지)</p>
+  <p>© 2026 Nutrify Demo · <a href="./index.html" style="color: var(--muted)">홈</a> · <a href="./about.html" style="color: var(--muted)">소개</a> · <a href="./demo.html" style="color: var(--muted)">데모</a></p>
+</footer>
+
+<script>
+  fetch("./products-data.json")
+    .then((r) => r.json())
+    .then((products) => {
+      const list = document.getElementById("product-list");
+      list.innerHTML = products.map((p) => {
+        const tags = (p["연관_니즈"] || []).slice(0, 2).map((n) => `#${n}`).join(" · ");
+        const ings = (p["주요_원료"] || []).slice(0, 4)
+          .map((i) => `<li><strong>${i.이름}</strong> · ${i.함량 || ""}</li>`).join("");
+        return `
+          <div class="product">
+            <span class="product-tag">${tags}</span>
+            <h3>${p["제품명"]}</h3>
+            <ul>${ings}</ul>
+          </div>
+        `;
+      }).join("");
+    })
+    .catch(() => {
+      document.getElementById("product-list").innerHTML =
+        '<p style="text-align:center; color: var(--muted);">제품 데이터를 불러오지 못했습니다.</p>';
+    });
+</script>
+<script src="./static/copilot.js"></script>
+</body>
+</html>

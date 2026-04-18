@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>뉴트리시파이 — 식약처 고시 원료 기반 맞춤 건기식 상담</title>
+  <meta name="description" content="식약처 고시 기능성 원료와 자사 제품 데이터를 기반으로 1:1 맞춤 건강기능식품을 추천해 드립니다." />
+  <link rel="stylesheet" href="./static/styles.css" />
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="./index.html" class="logo" style="text-decoration:none">🌿 뉴트리시파이</a>
+    <div class="nav-links">
+      <a href="./index.html">홈</a>
+      <a href="./about.html">서비스 소개</a>
+      <a href="./demo.html">데모 시나리오</a>
+      <a href="./products.html">제품 라인업</a>
+    </div>
+    <button class="nav-cta" onclick="openCopilot()">상담 시작</button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <span class="hero-badge">🇰🇷 식약처 고시 기능성 원료 기반</span>
+    <h1>5분 만에 받는<br /><span>나에게 꼭 맞는 건강기능식품</span></h1>
+    <p>고민을 입력하면 식약처 고시 기능성 원료와 자사 제품 데이터를 매칭해 안전하고 객관적인 추천을 받아보실 수 있습니다.</p>
+    <button class="hero-cta" onclick="openCopilot()">💬 무료 맞춤 상담 시작하기</button>
+    <p class="hero-note">로그인 불필요 · 평균 5분 소요 · 임신/복약 정보 입력 가능</p>
+  </div>
+</header>
+
+<section id="features">
+  <div class="container">
+    <h2 class="section-title">왜 뉴트리시파이 상담인가요?</h2>
+    <p class="section-sub">광고 카피가 아닌 식약처 고시 기능성 원료 데이터를 직접 매칭합니다.</p>
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature-icon">📋</div>
+        <h3>식약처 고시 원료 매칭</h3>
+        <p>일반 영양소 26종 + 개별인정형 원료 200+ 데이터에서 사용자 니즈와 일치하는 기능성 원료를 자동 검색합니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔗</div>
+        <h3>원료 → 제품 추론 사슬</h3>
+        <p>모든 추천에 "고시 원료 → 자사 보유 원료 → 해당 원료 제품"이라는 명확한 근거가 따라옵니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚠️</div>
+        <h3>안전성 우선 설계</h3>
+        <p>임신/수유, 복약 중인 약(와파린 등)을 입력하면 비타민 K·고용량 비타민 A 등 위험 원료를 사전에 차단합니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎯</div>
+        <h3>다중 니즈 동시 케어</h3>
+        <p>"피로하고 눈도 침침해요" 같은 복합 고민도 절(clause) 단위로 분석해 각각 다른 제품을 안내합니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🌱</div>
+        <h3>매일의 베이스 영양</h3>
+        <p>증상별 추천에 더해, 모든 사용자에게 종합비타민 베이스 제품을 함께 안내합니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">👍</div>
+        <h3>피드백 기반 개선</h3>
+        <p>매 추천에 👍/👎 피드백 버튼이 붙어 있어 추천 품질이 지속적으로 학습됩니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="funnel">
+  <div class="container">
+    <h2 class="section-title">상담은 이렇게 진행됩니다</h2>
+    <p class="section-sub">5분 안에 끝나는 6단계 흐름</p>
+    <div class="funnel">
+      <div class="funnel-steps">
+        <div class="funnel-step"><b>1</b><span>증상 입력</span></div>
+        <span class="funnel-arrow">→</span>
+        <div class="funnel-step"><b>2</b><span>고시 원료 매칭</span></div>
+        <span class="funnel-arrow">→</span>
+        <div class="funnel-step"><b>3</b><span>1차 제품 추천</span></div>
+        <span class="funnel-arrow">→</span>
+        <div class="funnel-step"><b>4</b><span>추가 증상 확인</span></div>
+        <span class="funnel-arrow">→</span>
+        <div class="funnel-step"><b>5</b><span>요약 + 베이스</span></div>
+        <span class="funnel-arrow">→</span>
+        <div class="funnel-step"><b>6</b><span>구매 안내</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container">
+    <h2>지금 바로 무료 상담을 받아보세요</h2>
+    <p>로그인 없이 5분이면 충분합니다. 임신·복약 정보를 입력하시면 더 안전한 추천을 받으실 수 있어요.</p>
+    <button class="hero-cta" onclick="openCopilot()">💬 무료 맞춤 상담 시작하기</button>
+  </div>
+</section>
+
+<footer>
+  <p><strong>🌿 뉴트리시파이 (Nutrify)</strong> — AI 기반 건강기능식품 맞춤 상담 (테스트 페이지)</p>
+  <p>© 2026 Nutrify Demo · <a href="./about.html" style="color: var(--muted)">소개</a> · <a href="./demo.html" style="color: var(--muted)">데모</a> · <a href="./products.html" style="color: var(--muted)">제품</a></p>
+  <div class="disclaimer">
+    ⚠️ <strong>면책 안내:</strong> 본 서비스는 건강기능식품 선택을 돕기 위한 참고용 정보이며,
+    의학적 진단·치료를 대체하지 않습니다. 임산부·만성질환자·복약 중이신 분은
+    반드시 전문의와 상담 후 섭취하세요.
+  </div>
+</footer>
+
+<script src="./static/copilot.js"></script>
+</body>
+</html>

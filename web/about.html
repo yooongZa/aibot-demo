@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>서비스 소개 — 뉴트리시파이</title>
+  <link rel="stylesheet" href="./static/styles.css" />
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="./index.html" class="logo" style="text-decoration:none">🌿 뉴트리시파이</a>
+    <div class="nav-links">
+      <a href="./index.html">홈</a>
+      <a href="./about.html">서비스 소개</a>
+      <a href="./demo.html">데모 시나리오</a>
+      <a href="./products.html">제품 라인업</a>
+    </div>
+    <button class="nav-cta" onclick="openCopilot()">상담 시작</button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <span class="hero-badge">📖 서비스 소개</span>
+    <h1>왜 <span>뉴트리시파이</span>인가요?</h1>
+    <p>광고 카피 대신 식약처 고시 데이터를, 추측 대신 원료 사슬 근거를 제공합니다.</p>
+  </div>
+</header>
+
+<section>
+  <div class="container" style="max-width: 760px;">
+    <h2 class="section-title" style="text-align:left">기술 스택</h2>
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature-icon">🤖</div>
+        <h3>Gemini 2.0 Flash</h3>
+        <p>Google의 최신 한국어 LLM이 자연스러운 상담 메시지를 생성합니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h3>Chainlit 1.3</h3>
+        <p>스트리밍 응답·액션 버튼·세션 관리가 가능한 LLM 챗봇 프레임워크.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔍</div>
+        <h3>식약처 고시 DB</h3>
+        <p>일반 영양소 26종 + 개별인정형 원료 200+ 데이터를 직접 매칭.</p>
+      </div>
+    </div>
+
+    <h2 class="section-title" style="text-align:left; margin-top: 48px;">데이터 출처</h2>
+    <div class="feature">
+      <ul style="padding-left: 20px; color: var(--muted); line-height: 2;">
+        <li>식품의약품안전처 고시 「건강기능식품 기능성 원료 인정 현황」</li>
+        <li>식약처 「개별인정형 원료 인정 현황」 고시</li>
+        <li>한국영양학회 「2020 한국인 영양소 섭취기준」</li>
+        <li>자사 제품 카탈로그 (Products.json) 7종</li>
+      </ul>
+    </div>
+
+    <h2 class="section-title" style="text-align:left; margin-top: 48px;">개인정보 처리</h2>
+    <div class="feature">
+      <p style="color: var(--muted);">
+        본 데모는 상담 분석 목적으로 대화 내용을 SQLite에 저장합니다.
+        사용자 식별 정보(이름·연락처)는 수집하지 않으며, 입력된 임신/복약 정보는
+        세션 단위로만 활용됩니다. 프로덕션 배포 시 GDPR/개인정보보호법 준수
+        동의 절차를 추가해야 합니다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>🌿 뉴트리시파이 (Nutrify)</strong> — AI 기반 건강기능식품 맞춤 상담 (테스트 페이지)</p>
+  <p>© 2026 Nutrify Demo · <a href="./index.html" style="color: var(--muted)">홈</a> · <a href="./demo.html" style="color: var(--muted)">데모</a> · <a href="./products.html" style="color: var(--muted)">제품</a></p>
+</footer>
+
+<script src="./static/copilot.js"></script>
+</body>
+</html>
