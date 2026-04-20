@@ -59,6 +59,23 @@ def load_products() -> list[dict]:
 
 
 @lru_cache(maxsize=1)
+def load_services() -> list[dict]:
+    """Dispenser / membership / other non-supplement offerings.
+
+    Kept separate from 자사_제품 so they never leak into recommend_for_need().
+    """
+    with open(PRODUCTS_FILE, encoding="utf-8") as f:
+        return json.load(f).get("서비스_상품", [])
+
+
+def get_service(slug: str) -> dict | None:
+    for s in load_services():
+        if s.get("상세_slug") == slug:
+            return s
+    return None
+
+
+@lru_cache(maxsize=1)
 def load_nutrients() -> list[dict]:
     with open(NUTRIENTS_FILE, encoding="utf-8") as f:
         return json.load(f).get("nutrients", [])
