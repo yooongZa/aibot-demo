@@ -92,12 +92,26 @@ def _product_detail_url(p: dict) -> str:
     return f"{LANDING_PRODUCTS_URL}#{slug}" if slug else LANDING_PRODUCTS_URL
 
 
-def _format_products_table(products: list[dict], title: str = "추천 제품") -> str:
-    """Render a list of products as a single markdown comparison table.
+def _product_image_elements(products: list[dict]) -> list[cl.Image]:
+    """Attach product thumbnails as inline Chainlit Image elements."""
+    elements: list[cl.Image] = []
+    for p in products:
+        url = p.get("이미지_url")
+        if not url:
+            continue
+        elements.append(
+            cl.Image(
+                name=p.get("제품명", ""),
+                url=url,
+                display="inline",
+                size="small",
+            )
+        )
+    return elements
 
-    Adds a product emoji icon before each name and a '📄 상세' link per row
-    pointing to the corresponding anchor on the public products page.
-    """
+
+def _format_products_table(products: list[dict], title: str = "추천 제품") -> str:
+    """Render a list of products as a single markdown comparison table."""
     if not products:
         return ""
     lines = [f"##### 📋 {title}", ""]
@@ -407,6 +421,7 @@ async def _process_user_turn(user_input: str) -> None:
                 await cl.Message(
                     content=_format_products_table(new_cards, title=title),
                     actions=_recommendation_actions(new_cards),
+                    elements=_product_image_elements(new_cards),
                 ).send()
 
         elif flow.stage == STAGE_CLOSE:
@@ -417,6 +432,7 @@ async def _process_user_turn(user_input: str) -> None:
                 await cl.Message(
                     content=_format_base_product_table(base),
                     actions=_recommendation_actions([base]),
+                    elements=_product_image_elements([base]),
                 ).send()
 
         await _send_stage_step(flow)
