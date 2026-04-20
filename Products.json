@@ -4,6 +4,7 @@
       "제품명": "뉴트리시파이 데일리 베이스",
       "아이콘": "💊",
       "상세_slug": "daily-base",
+      "이미지_url": "https://yooongza.github.io/aibot-demo/static/images/products/daily-base.svg",
       "주요_원료": [
         {"이름": "비타민 A", "함량": "700µg RAE"},
         {"이름": "비타민 D", "함량": "5µg"},
@@ -34,6 +35,7 @@
       "제품명": "뉴트리시파이 오메가3 비타민D",
       "아이콘": "🐟",
       "상세_slug": "omega3",
+      "이미지_url": "https://yooongza.github.io/aibot-demo/static/images/products/omega3.svg",
       "주요_원료": [
         {"이름": "EPA 및 DHA 함유 유지", "함량": "600mg"},
         {"이름": "비타민 D", "함량": "5µg"}
@@ -44,6 +46,7 @@
       "제품명": "뉴트리시파이 관절 토탈 케어",
       "아이콘": "🦴",
       "상세_slug": "joint",
+      "이미지_url": "https://yooongza.github.io/aibot-demo/static/images/products/joint.svg",
       "주요_원료": [
         {"이름": "MSM(엠에스엠)", "함량": "1800mg"},
         {"이름" :"콘드로이친", "함량": "1500mg"},
@@ -55,6 +58,7 @@
       "제품명": "뉴트리시파이 눈 스마트 포커스",
       "아이콘": "👁",
       "상세_slug": "eye",
+      "이미지_url": "https://yooongza.github.io/aibot-demo/static/images/products/eye.svg",
       "주요_원료": [
         {"이름": "마리골드꽃추출물(루테인)", "함량": "20mg"},
         {"이름": "헤마토코쿠스 추출물(아스타잔틴)", "함량": "6mg"},
@@ -66,6 +70,7 @@
       "제품명": "뉴트리시파이 에너지 부스트업",
       "아이콘": "⚡",
       "상세_slug": "energy",
+      "이미지_url": "https://yooongza.github.io/aibot-demo/static/images/products/energy.svg",
       "주요_원료": [
         {"이름": "홍삼", "함량": "10mg"},
         {"이름": "비타민 B1", "함량": "10mg"},
@@ -79,6 +84,7 @@
       "제품명": "뉴트리시파이 장 프로텍션",
       "아이콘": "🌱",
       "상세_slug": "gut",
+      "이미지_url": "https://yooongza.github.io/aibot-demo/static/images/products/gut.svg",
       "주요_원료": [
         {"이름": "프로바이오틱스", "함량": "100억 CFU"},
         {"이름": "프락토올리고당", "함량": "3g"},
@@ -90,6 +96,7 @@
       "제품명": "뉴트리시파이 피부 글로우",
       "아이콘": "✨",
       "상세_slug": "skin",
+      "이미지_url": "https://yooongza.github.io/aibot-demo/static/images/products/skin.svg",
       "주요_원료": [
         {"이름": "히알루론산", "함량": "240mg"},
         {"이름": "NAG(N-아세틸글루코사민)", "함량": "1000mg"},
