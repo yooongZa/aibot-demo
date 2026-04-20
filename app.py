@@ -83,7 +83,11 @@ def _get_purchase_cart() -> list[str]:
 
 
 def _format_products_table(products: list[dict], title: str = "추천 제품") -> str:
-    """Render a list of products as a single markdown comparison table."""
+    """Render a list of products as a single markdown comparison table.
+
+    Chainlit's markdown renderer strips raw HTML, so we use comma separators
+    (not <br>) inside cells to keep everything readable.
+    """
     if not products:
         return ""
     lines = [f"##### 📋 {title}", ""]
@@ -91,9 +95,9 @@ def _format_products_table(products: list[dict], title: str = "추천 제품") -
     lines.append("|---|---|---|")
     for p in products:
         name = f"**{p.get('제품명', '')}**"
-        ings = "<br>".join(
-            f"{i.get('이름', '')} · {i.get('함량', '')}".strip()
-            for i in p.get("주요_원료", [])[:4]
+        ings = ", ".join(
+            f"{i.get('이름', '')} {i.get('함량', '')}".strip()
+            for i in p.get("주요_원료", [])[:3]
         )
         needs = " · ".join(f"#{n}" for n in p.get("연관_니즈", []))
         lines.append(f"| {name} | {ings} | {needs} |")
@@ -101,7 +105,11 @@ def _format_products_table(products: list[dict], title: str = "추천 제품") -
 
 
 def _format_base_product_table(base: dict) -> str:
-    """Detailed table view for the base product shown in the CLOSE stage."""
+    """Base product detail: short table + bullet list for ingredients.
+
+    A 2-column table doesn't render cell line-breaks reliably, so ingredients
+    are listed as bullets below the table for readability.
+    """
     if not base:
         return ""
     lines = [
@@ -111,16 +119,17 @@ def _format_base_product_table(base: dict) -> str:
         "|---|---|",
         f"| **제품명** | {base.get('제품명', '')} |",
     ]
-    ings = base.get("주요_원료", [])
-    if ings:
-        ing_text = "<br>".join(
-            f"• {i.get('이름', '')} · {i.get('함량', '')}" for i in ings[:10]
-        )
-        lines.append(f"| **주요 원료** | {ing_text} |")
     needs = base.get("연관_니즈", [])
     if needs:
         lines.append(f"| **연관 니즈** | {' · '.join(needs)} |")
     lines.append("| **권장** | 종합 비타민·미네랄 베이스로 매일 꾸준히 섭취 |")
+
+    ings = base.get("주요_원료", [])
+    if ings:
+        lines.append("")
+        lines.append("**주요 원료**")
+        for i in ings[:12]:
+            lines.append(f"- {i.get('이름', '')} · {i.get('함량', '')}")
     return "\n".join(lines)
 
 
@@ -168,22 +177,40 @@ def _quick_start_actions() -> list[cl.Action]:
     ]
 
 
-def _recommendation_actions(product_names: list[str]) -> list[cl.Action]:
-    """Three action buttons shown beneath every product recommendation table."""
+def _recommendation_actions(products: list[dict]) -> list[cl.Action]:
+    """Per-product buy button + single 'other inquiry' button.
+
+    The user picks exactly one product by clicking its 구입 button. Free text
+    and alternative-product requests go through the single catch-all button.
+    """
+    actions: list[cl.Action] = []
+    for p in products:
+        name = p.get("제품명", "")
+        if not name:
+            continue
+        actions.append(
+            cl.Action(
+                name="buy_products",
+                label=f"🛒 {name} 구입",
+                payload={"products": [name]},
+            )
+        )
+    actions.append(
+        cl.Action(
+            name="other_inquiry",
+            label="💬 기타 문의 사항은 직접 입력해주세요",
+            payload={},
+        )
+    )
+    return actions
+
+
+def _ask_more_actions() -> list[cl.Action]:
+    """Shown under the '다른 증상 있나요?' prompt after a purchase."""
     return [
         cl.Action(
-            name="buy_products",
-            label="🛒 구입",
-            payload={"products": product_names},
-        ),
-        cl.Action(
-            name="view_other_products",
-            label="🔄 다른 제품 확인",
-            payload={"products": product_names},
-        ),
-        cl.Action(
-            name="free_inquiry",
-            label="💬 자유 입력 (추가 문의)",
+            name="decline_more",
+            label="✅ 없어요",
             payload={},
         ),
     ]
@@ -373,7 +400,7 @@ async def _process_user_turn(user_input: str) -> None:
                 title = "1차 추천 제품" if flow.stage == STAGE_PRIMARY else "추가 추천 제품"
                 await cl.Message(
                     content=_format_products_table(new_cards, title=title),
-                    actions=_recommendation_actions([p["제품명"] for p in new_cards]),
+                    actions=_recommendation_actions(new_cards),
                 ).send()
 
         elif flow.stage == STAGE_CLOSE:
@@ -383,7 +410,7 @@ async def _process_user_turn(user_input: str) -> None:
             if base:
                 await cl.Message(
                     content=_format_base_product_table(base),
-                    actions=_recommendation_actions([BASE_PRODUCT_NAME]),
+                    actions=_recommendation_actions([base]),
                 ).send()
 
         await _send_stage_step(flow)
@@ -456,43 +483,29 @@ async def on_buy_products(action: cl.Action) -> None:
     msg_lines.append("")
     msg_lines.append(
         "혹시 함께 관리하고 싶은 **다른 증상**이 있으신가요? "
-        "있다면 편하게 말씀해 주세요. 없으시면 \"없어요\"라고 답해주시면 "
+        "있다면 채팅창에 편하게 입력해 주세요. 없으시면 아래 **✅ 없어요** 버튼을 눌러주시면 "
         "기본 영양 보충 제품을 안내해 드릴게요."
     )
-    await cl.Message(content="\n".join(msg_lines)).send()
-
-
-@cl.action_callback("view_other_products")
-async def on_view_other_products(action: cl.Action) -> None:
-    shown = list(action.payload.get("products", []) or [])
-    products = load_products()
-    others = [
-        p
-        for p in products
-        if p["제품명"] not in shown and p["제품명"] != BASE_PRODUCT_NAME
-    ]
-    if not others:
-        await cl.Message(
-            content=(
-                "현재 안내해 드릴 다른 제품이 없습니다. "
-                "원하시는 다른 증상이나 원료를 직접 입력해 주세요."
-            )
-        ).send()
-        return
-
-    next_batch = others[:3]
     await cl.Message(
-        content=_format_products_table(next_batch, title="다른 추천 제품"),
-        actions=_recommendation_actions([p["제품명"] for p in next_batch]),
+        content="\n".join(msg_lines),
+        actions=_ask_more_actions(),
     ).send()
 
 
-@cl.action_callback("free_inquiry")
-async def on_free_inquiry(action: cl.Action) -> None:
+@cl.action_callback("decline_more")
+async def on_decline_more(action: cl.Action) -> None:
+    """User confirms no additional symptoms → advance to CLOSE."""
+    await cl.Message(content="없어요", author="user").send()
+    await _process_user_turn("없어요")
+
+
+@cl.action_callback("other_inquiry")
+async def on_other_inquiry(action: cl.Action) -> None:
     await cl.Message(
         content=(
-            "💬 추가로 궁금하신 점이나 다른 증상을 자유롭게 입력해 주세요.\n"
-            "_예: \"임신 중인데 안전한가요?\", \"변비도 같이 있어요\" 등_"
+            "💬 **기타 문의 사항은 직접 입력해주세요**\n\n"
+            "다른 증상, 다른 제품 추천, 안전성 확인 등 무엇이든 "
+            "아래 채팅창에 자유롭게 입력해 주세요."
         )
     ).send()
 
@@ -539,28 +552,6 @@ async def on_purchase_inquiry(action: cl.Action) -> None:
             f"- 📩 이메일 문의: [{url}]({url})\n"
             "- 💬 카카오톡 상담: (채널 연결 예정)\n\n"
             "문의 시 **상담 번호**와 **관심 제품**을 함께 적어주시면 빠르게 안내드릴 수 있어요."
-        )
-    ).send()
-
-
-@cl.action_callback("product_details")
-async def on_product_details(action: cl.Action) -> None:
-    url = action.payload.get("url", CATALOG_URL)
-    await cl.Message(
-        content=f"제품 카탈로그에서 상세 스펙과 섭취 방법을 확인하실 수 있어요.\n\n👉 [{url}]({url})"
-    ).send()
-
-
-@cl.action_callback("subscribe")
-async def on_subscribe(action: cl.Action) -> None:
-    await cl.Message(
-        content=(
-            "🎁 **정기구독 1개월 무료 체험**\n\n"
-            "추천드린 제품을 매월 자동으로 받아보실 수 있습니다.\n"
-            "- 첫 1개월 무료 (배송비 별도)\n"
-            "- 언제든 해지 가능\n"
-            "- 정기 구독 시 10% 할인 적용\n\n"
-            f"신청은 [구매 문의 링크]({PURCHASE_URL})에서 '정기구독'이라고 적어주세요."
         )
     ).send()
 
