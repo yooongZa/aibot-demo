@@ -6,6 +6,16 @@
   <meta name="chainlit-server" content="https://yongza-aibot-demo.hf.space" />
   <title>제품 라인업 — 뉴트리시파이</title>
   <link rel="stylesheet" href="./static/styles.css" />
+  <style>
+    .product-image {
+      display: block;
+      width: 96px;
+      height: 96px;
+      border-radius: 12px;
+      margin: 0 0 14px;
+      background: var(--bg);
+    }
+  </style>
 </head>
 <body>
 
@@ -76,11 +86,13 @@
         const name = p["제품명"];
         const slug = PRODUCT_SLUGS[name] || "";
         const icon = PRODUCT_ICONS[name] || "🌿";
+        const img = slug ? `./static/images/products/${slug}.svg` : "";
         const tags = (p["연관_니즈"] || []).slice(0, 2).map((n) => `#${n}`).join(" · ");
         const ings = (p["주요_원료"] || []).slice(0, 4)
           .map((i) => `<li><strong>${i.이름}</strong> · ${i.함량 || ""}</li>`).join("");
         return `
           <div class="product" ${slug ? `id="${slug}"` : ""}>
+            ${img ? `<img class="product-image" src="${img}" alt="${name}">` : ""}
             <span class="product-tag">${tags}</span>
             <h3><span style="margin-right:6px">${icon}</span>${name}</h3>
             <ul>${ings}</ul>
@@ -88,7 +100,6 @@
         `;
       }).join("");
 
-      // If the URL has a #slug fragment (from chatbot deep link), scroll+highlight
       if (location.hash) {
         const el = document.querySelector(location.hash);
         if (el) {
