@@ -40,6 +40,7 @@ if AUTH_ENABLED:
 
 PURCHASE_URL = "mailto:sales@example.com?subject=뉴트리시파이 제품 구매 문의"
 CATALOG_URL = "https://example.com/products"
+LANDING_PRODUCTS_URL = "https://yooongza.github.io/aibot-demo/products.html"
 
 QUICK_START_NEEDS = [
     ("피로", "요즘 피로가 너무 심해요"),
@@ -82,47 +83,56 @@ def _get_purchase_cart() -> list[str]:
     return cart
 
 
+def _product_icon(p: dict) -> str:
+    return p.get("아이콘") or "🌿"
+
+
+def _product_detail_url(p: dict) -> str:
+    slug = p.get("상세_slug", "")
+    return f"{LANDING_PRODUCTS_URL}#{slug}" if slug else LANDING_PRODUCTS_URL
+
+
 def _format_products_table(products: list[dict], title: str = "추천 제품") -> str:
     """Render a list of products as a single markdown comparison table.
 
-    Chainlit's markdown renderer strips raw HTML, so we use comma separators
-    (not <br>) inside cells to keep everything readable.
+    Adds a product emoji icon before each name and a '📄 상세' link per row
+    pointing to the corresponding anchor on the public products page.
     """
     if not products:
         return ""
     lines = [f"##### 📋 {title}", ""]
-    lines.append("| 제품명 | 주요 원료 | 연관 니즈 |")
-    lines.append("|---|---|---|")
+    lines.append("| 제품 | 주요 원료 | 연관 니즈 | 상세 |")
+    lines.append("|---|---|---|---|")
     for p in products:
-        name = f"**{p.get('제품명', '')}**"
+        icon = _product_icon(p)
+        name = f"{icon} **{p.get('제품명', '')}**"
         ings = ", ".join(
             f"{i.get('이름', '')} {i.get('함량', '')}".strip()
             for i in p.get("주요_원료", [])[:3]
         )
         needs = " · ".join(f"#{n}" for n in p.get("연관_니즈", []))
-        lines.append(f"| {name} | {ings} | {needs} |")
+        detail = f"[📄 보기]({_product_detail_url(p)})"
+        lines.append(f"| {name} | {ings} | {needs} | {detail} |")
     return "\n".join(lines)
 
 
 def _format_base_product_table(base: dict) -> str:
-    """Base product detail: short table + bullet list for ingredients.
-
-    A 2-column table doesn't render cell line-breaks reliably, so ingredients
-    are listed as bullets below the table for readability.
-    """
+    """Base product detail: short table + bullet list for ingredients."""
     if not base:
         return ""
+    icon = _product_icon(base)
     lines = [
-        f"##### 🌿 매일의 기본 영양 — {base.get('제품명', '')}",
+        f"##### 🌿 매일의 기본 영양 — {icon} {base.get('제품명', '')}",
         "",
         "| 항목 | 내용 |",
         "|---|---|",
-        f"| **제품명** | {base.get('제품명', '')} |",
+        f"| **제품명** | {icon} {base.get('제품명', '')} |",
     ]
     needs = base.get("연관_니즈", [])
     if needs:
         lines.append(f"| **연관 니즈** | {' · '.join(needs)} |")
     lines.append("| **권장** | 종합 비타민·미네랄 베이스로 매일 꾸준히 섭취 |")
+    lines.append(f"| **상세 페이지** | [📄 {base.get('제품명', '')} 상세 보기]({_product_detail_url(base)}) |")
 
     ings = base.get("주요_원료", [])
     if ings:
@@ -141,20 +151,21 @@ def _format_final_summary(cart: list[str], products: list[dict]) -> str:
         "",
         "지금까지 선택해 주신 제품 목록입니다. 아래 링크에서 바로 구매를 진행하실 수 있어요.",
         "",
-        "| 제품명 | 주요 원료 |",
-        "|---|---|",
+        "| 제품 | 주요 원료 | 상세 |",
+        "|---|---|---|",
     ]
     if cart:
         for name in cart:
             p = by_name.get(name)
-            ings = (
-                ", ".join(i.get("이름", "") for i in p.get("주요_원료", [])[:3])
-                if p
-                else "—"
-            )
-            lines.append(f"| **{name}** | {ings} |")
+            if not p:
+                lines.append(f"| **{name}** | — | — |")
+                continue
+            icon = _product_icon(p)
+            ings = ", ".join(i.get("이름", "") for i in p.get("주요_원료", [])[:3])
+            detail = f"[📄 보기]({_product_detail_url(p)})"
+            lines.append(f"| {icon} **{name}** | {ings} | {detail} |")
     else:
-        lines.append("| _선택된 제품이 없습니다._ | — |")
+        lines.append("| _선택된 제품이 없습니다._ | — | — |")
 
     lines.extend(
         [
@@ -178,11 +189,7 @@ def _quick_start_actions() -> list[cl.Action]:
 
 
 def _recommendation_actions(products: list[dict]) -> list[cl.Action]:
-    """Per-product buy button + single 'other inquiry' button.
-
-    The user picks exactly one product by clicking its 구입 button. Free text
-    and alternative-product requests go through the single catch-all button.
-    """
+    """Per-product buy button + single 'other inquiry' button."""
     actions: list[cl.Action] = []
     for p in products:
         name = p.get("제품명", "")
@@ -206,7 +213,6 @@ def _recommendation_actions(products: list[dict]) -> list[cl.Action]:
 
 
 def _ask_more_actions() -> list[cl.Action]:
-    """Shown under the '다른 증상 있나요?' prompt after a purchase."""
     return [
         cl.Action(
             name="decline_more",
@@ -465,7 +471,6 @@ async def on_buy_products(action: cl.Action) -> None:
     flow = _get_flow()
     products = load_products()
 
-    # 베이스 제품을 구입하면 상담 종료 → 최종 구매 요약
     if BASE_PRODUCT_NAME in selected or flow.stage == STAGE_POST:
         await cl.Message(
             content=_format_final_summary(cart, products),
@@ -473,7 +478,6 @@ async def on_buy_products(action: cl.Action) -> None:
         ).send()
         return
 
-    # 그 외에는 다음 니즈를 묻고 SECONDARY 흐름으로 유도
     flow.stage = STAGE_ASK_MORE
     cl.user_session.set("flow", flow)
 
@@ -494,7 +498,6 @@ async def on_buy_products(action: cl.Action) -> None:
 
 @cl.action_callback("decline_more")
 async def on_decline_more(action: cl.Action) -> None:
-    """User confirms no additional symptoms → advance to CLOSE."""
     await cl.Message(content="없어요", author="user").send()
     await _process_user_turn("없어요")
 
