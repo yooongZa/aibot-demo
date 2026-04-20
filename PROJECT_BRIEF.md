@@ -77,5 +77,5 @@
 
 - [x] `STAGE_INIT` 프롬프트에 "현재 복용 중인 영양제가 있으신가요?" 옵션 질문 추가 (`prompts.py` WELCOME / STAGE_INIT + `app.py` QUICK_START "복약 점검" 시드)
 - [x] `STAGE_POST` / `_final_actions` 에 🏺 디스펜서 소개 · 🎟 연간 멤버십 가입 CTA 추가 (`app.py` `dispenser_intro` / `membership_join`)
-- [ ] 랜딩 페이지에 디스펜서 & 멤버십 섹션 추가 (`web/index.html`) — CTA 버튼의 `#dispenser` / `#membership` 앵커가 실제로 동작하도록
+- [x] 랜딩 페이지에 디스펜서 & 멤버십 섹션 추가 (`web/index.html` `#dispenser` / `#membership`, `static/styles.css` `.upsell`)
 - [ ] Products.json 또는 별도 파일에 **디스펜서 / 멤버십 상품 정보** 구조화
