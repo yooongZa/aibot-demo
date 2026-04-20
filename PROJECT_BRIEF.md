@@ -69,13 +69,13 @@
 | 식약처 고시 기능 인용 + 일일 섭취량 수치 + 과잉 경고 | ✅ | `prompts.py` 공통 규칙 #3 |
 | 제품 추천을 표 + 제품별 🛒 구입 버튼으로 제공 | ✅ | `app.py` `_format_products_table` / `_recommendation_actions` |
 | 베이스 제품 CLOSE → 최종 구매 요약 + 구매 링크 | ✅ | `app.py` `_format_final_summary` |
-| 현재 복용 중인 영양제 입력 → 과용·중복 분석 | ⚠️ 일부 (프로필의 복약 입력 일부만 활용) | 향후 개선: 별도 입력 필드 또는 프롬프트 흐름 |
-| 전용 디스펜서 안내 | ❌ 미구현 | 향후: CLOSE 카드 하단 액션 버튼 |
-| 연간 멤버십 가입 플로우 | ❌ 미구현 | 향후: 전용 버튼 + 링크 |
+| 현재 복용 중인 영양제 입력 → 과용·중복 분석 | ✅ | `prompts.py` WELCOME / STAGE_INIT / 공통규칙 #4 + `app.py` QUICK_START "복약 점검" 시드 |
+| 전용 디스펜서 안내 | ✅ | `app.py` `_final_actions` 🏺 버튼 + `on_dispenser_intro` 콜백 |
+| 연간 멤버십 가입 플로우 | ✅ | `app.py` `_final_actions` 🎟 버튼 + `on_membership_join` 콜백 |
 
 ## 6. 향후 업데이트 체크리스트
 
-- [ ] `STAGE_INIT` 프롬프트에 "현재 복용 중인 영양제가 있으신가요?" 옵션 질문 추가
-- [ ] `STAGE_POST` / `_final_actions` 에 🏺 디스펜서 소개 · 🎟 연간 멤버십 가입 CTA 추가
-- [ ] 랜딩 페이지에 디스펜서 & 멤버십 섹션 추가 (`web/index.html`)
-- [ ] Products.json 또는 별도 파일에 **디스펜서 / 멤버십 상품 정보** 구조화
+- [x] `STAGE_INIT` 프롬프트에 "현재 복용 중인 영양제가 있으신가요?" 옵션 질문 추가 (`prompts.py` WELCOME / STAGE_INIT + `app.py` QUICK_START "복약 점검" 시드)
+- [x] `STAGE_POST` / `_final_actions` 에 🏺 디스펜서 소개 · 🎟 연간 멤버십 가입 CTA 추가 (`app.py` `dispenser_intro` / `membership_join`)
+- [x] 랜딩 페이지에 디스펜서 & 멤버십 섹션 추가 (`web/index.html` `#dispenser` / `#membership`, `static/styles.css` `.upsell`)
+- [x] Products.json 또는 별도 파일에 **디스펜서 / 멤버십 상품 정보** 구조화 (`Products.json` `서비스_상품` 키 + `data.py` `load_services` / `get_service`)

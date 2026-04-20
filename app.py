@@ -41,13 +41,18 @@ if AUTH_ENABLED:
 PURCHASE_URL = "mailto:sales@example.com?subject=뉴트리시파이 제품 구매 문의"
 CATALOG_URL = "https://example.com/products"
 LANDING_PRODUCTS_URL = "https://yooongza.github.io/aibot-demo/products.html"
+DISPENSER_URL = "https://yooongza.github.io/aibot-demo/#dispenser"
+MEMBERSHIP_URL = "https://yooongza.github.io/aibot-demo/#membership"
+DISPENSER_INQUIRY_URL = "mailto:sales@example.com?subject=뉴트리시파이 전용 디스펜서 사전 예약 문의"
+MEMBERSHIP_INQUIRY_URL = "mailto:sales@example.com?subject=뉴트리시파이 연간 멤버십 가입 문의"
 
 QUICK_START_NEEDS = [
-    ("피로", "요즘 피로가 너무 심해요"),
-    ("눈", "눈이 뻑뻑하고 침침해요"),
-    ("관절", "관절이 좋지 않아요"),
-    ("장", "장 건강이 걱정돼요"),
-    ("면역", "면역력이 약해진 것 같아요"),
+    ("피로", "요즘 피로가 너무 심해요", "피로 개선"),
+    ("눈", "눈이 뻑뻑하고 침침해요", "눈 건강"),
+    ("관절", "관절이 좋지 않아요", "관절 건강"),
+    ("장", "장 건강이 걱정돼요", "장 건강"),
+    ("면역", "면역력이 약해진 것 같아요", "면역력 증진"),
+    ("복약 점검", "현재 복용 중인 영양제를 점검받고 싶어요", None),
 ]
 
 
@@ -108,6 +113,43 @@ def _product_image_elements(products: list[dict]) -> list[cl.Image]:
             )
         )
     return elements
+
+
+def _format_ingredient_table(ingredients: list[dict], product_name: str = "") -> str:
+    """Render functional-ingredient rows as a 4-column markdown table.
+
+    Columns: 원료명 | 식약처 고시 기능성 | 1일 권장 섭취량 | 과잉·주의사항.
+    Prose explanation of these three fields is handled here so the LLM can stay
+    concise in its streamed reply (see STAGE_PRIMARY / STAGE_SECONDARY prompts).
+    """
+    if not ingredients:
+        return ""
+
+    def _clean(val: object) -> str:
+        return str(val).replace("|", "\\|").replace("\n", " ").strip()
+
+    heading = (
+        f"##### 📊 **{product_name}** 주요 원료 상세"
+        if product_name
+        else "##### 📊 주요 원료 상세"
+    )
+    lines = [heading, ""]
+    lines.append("| 원료명 | 식약처 고시 기능성 | 1일 권장 섭취량 | 과잉·주의사항 |")
+    lines.append("|---|---|---|---|")
+    for ing in ingredients:
+        name = ing.get("name", "") or "—"
+        claim = ing.get("claim", "") or "—"
+        intake = ing.get("daily_intake")
+        if isinstance(intake, list):
+            intake = "; ".join(
+                f"{x.get('condition', '')}: {x.get('amount', '')}" for x in intake
+            )
+        intake = intake or "—"
+        precautions = " / ".join(p for p in (ing.get("precautions") or []) if p) or "특이사항 없음"
+        lines.append(
+            f"| **{_clean(name)}** | {_clean(claim)} | {_clean(intake)} | {_clean(precautions)} |"
+        )
+    return "\n".join(lines)
 
 
 def _format_products_table(products: list[dict], title: str = "추천 제품") -> str:
@@ -198,7 +240,7 @@ def _quick_start_actions() -> list[cl.Action]:
             label=f"#{label}",
             payload={"text": seed},
         )
-        for label, seed in QUICK_START_NEEDS
+        for label, seed, _need_key in QUICK_START_NEEDS
     ]
 
 
@@ -226,14 +268,27 @@ def _recommendation_actions(products: list[dict]) -> list[cl.Action]:
     return actions
 
 
-def _ask_more_actions() -> list[cl.Action]:
-    return [
+def _ask_more_actions(excluded_needs: set[str]) -> list[cl.Action]:
+    """Quick-start buttons for needs the user hasn't addressed yet + decline."""
+    actions: list[cl.Action] = []
+    for label, seed, need_key in QUICK_START_NEEDS:
+        if need_key is not None and need_key in excluded_needs:
+            continue
+        actions.append(
+            cl.Action(
+                name="quick_start",
+                label=f"#{label}",
+                payload={"text": seed},
+            )
+        )
+    actions.append(
         cl.Action(
             name="decline_more",
             label="✅ 없어요",
             payload={},
-        ),
-    ]
+        )
+    )
+    return actions
 
 
 def _final_actions() -> list[cl.Action]:
@@ -242,6 +297,16 @@ def _final_actions() -> list[cl.Action]:
             name="open_catalog",
             label="🛍 구매 페이지 열기",
             payload={"url": CATALOG_URL},
+        ),
+        cl.Action(
+            name="dispenser_intro",
+            label="🏺 전용 디스펜서 알아보기",
+            payload={"url": DISPENSER_URL},
+        ),
+        cl.Action(
+            name="membership_join",
+            label="🎟 연간 멤버십 가입하기",
+            payload={"url": MEMBERSHIP_URL},
         ),
         cl.Action(
             name="purchase_inquiry",
@@ -411,12 +476,22 @@ async def _process_user_turn(user_input: str) -> None:
 
         if flow.stage in (STAGE_PRIMARY, STAGE_SECONDARY):
             new_cards = [
-                p for p in analysis["products"][:3]
+                p for p in analysis["products"]
                 if p["제품명"] not in flow.recommended_products
-            ]
+            ][:1]
             for p in new_cards:
                 flow.recommended_products.append(p["제품명"])
             if new_cards:
+                product = new_cards[0]
+                product_name = product.get("제품명", "")
+                relevant_ings = [
+                    ci for ci in analysis.get("company_ingredients", [])
+                    if product_name in ci.get("company_products", [])
+                ]
+                ing_table = _format_ingredient_table(relevant_ings, product_name)
+                if ing_table:
+                    await cl.Message(content=ing_table).send()
+
                 title = "1차 추천 제품" if flow.stage == STAGE_PRIMARY else "추가 추천 제품"
                 await cl.Message(
                     content=_format_products_table(new_cards, title=title),
@@ -503,12 +578,12 @@ async def on_buy_products(action: cl.Action) -> None:
     msg_lines.append("")
     msg_lines.append(
         "혹시 함께 관리하고 싶은 **다른 증상**이 있으신가요? "
-        "있다면 채팅창에 편하게 입력해 주세요. 없으시면 아래 **✅ 없어요** 버튼을 눌러주시면 "
-        "기본 영양 보충 제품을 안내해 드릴게요."
+        "아래 버튼 중 해당하는 니즈를 눌러주시거나, 채팅창에 직접 입력해 주세요. "
+        "없으시면 **✅ 없어요** 를 누르시면 기본 영양 보충 제품을 안내해 드릴게요."
     )
     await cl.Message(
         content="\n".join(msg_lines),
-        actions=_ask_more_actions(),
+        actions=_ask_more_actions(set(flow.identified_needs)),
     ).send()
 
 
@@ -559,6 +634,41 @@ async def on_feedback(action: cl.Action) -> None:
     label = "👍 좋은 평가" if rating == "up" else "👎 개선 의견"
     await cl.Message(
         content=f"{label} 감사합니다! 의견은 추천 품질 개선에 활용됩니다."
+    ).send()
+
+
+@cl.action_callback("dispenser_intro")
+async def on_dispenser_intro(action: cl.Action) -> None:
+    url = action.payload.get("url", DISPENSER_URL)
+    await cl.Message(
+        content=(
+            "🏺 **전용 디스펜서로 매일 한 번에 섭취하세요**\n\n"
+            "여러 영양제 통을 따로 여닫는 번거로움을 줄이기 위해 만든 무전원 자판기형 디스펜서입니다. "
+            "식탁 위에 놓아도 잘 어울리는 미니멀 디자인이고, 리필 카트리지만 갈아 끼우면 되어요.\n\n"
+            "- 🧴 여러 통을 열 필요 없이 한 번에 섭취 → **시간 절약**\n"
+            "- 🔌 무전원 구조 + 리필 카트리지 교체식\n"
+            "- 🍽 식탁 위에 두기 좋은 미니멀 디자인\n\n"
+            f"👉 [디스펜서 자세히 보기]({url})\n"
+            f"📩 [사전 예약/문의 보내기]({DISPENSER_INQUIRY_URL})"
+        )
+    ).send()
+
+
+@cl.action_callback("membership_join")
+async def on_membership_join(action: cl.Action) -> None:
+    url = action.payload.get("url", MEMBERSHIP_URL)
+    await cl.Message(
+        content=(
+            "🎟 **연간 멤버십으로 더 합리적으로 시작하세요**\n\n"
+            "코스트코 모델을 벤치마킹한 연간 멤버십입니다. "
+            "광고·유통 비용을 줄여 가격으로 환원하는 구조라, 가입하시면 정기 구독 가격과 우선 배송 혜택을 받으실 수 있어요. "
+            "**\"건강을 위해 낭비되는 돈과 시간을 절약한다\"** 라는 슬로건 그대로의 혜택입니다.\n\n"
+            "- 💸 회원 전용 정기 구독 단가 적용\n"
+            "- 🚚 우선 배송 / 재고 우선 확보\n"
+            "- 🧪 신규 처방·리뉴얼 제품 우선 안내\n\n"
+            f"👉 [멤버십 자세히 보기]({url})\n"
+            f"📩 [가입 문의 보내기]({MEMBERSHIP_INQUIRY_URL})"
+        )
     ).send()
 
 

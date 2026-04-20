@@ -155,6 +155,19 @@ section { padding: 60px 0; }
 .funnel-step span { font-size: 14px; }
 .funnel-arrow { color: var(--muted); font-size: 20px; }
 
+.upsell { scroll-margin-top: 72px; }
+.upsell-alt { background: white; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.upsell-badge {
+  display: inline-block;
+  background: #ecfdf5; color: var(--primary-dark);
+  padding: 4px 12px; border-radius: 99px;
+  font-size: 13px; font-weight: 500;
+  margin: 0 auto 14px; letter-spacing: 0.2px;
+}
+.upsell .container { text-align: center; }
+.upsell .feature-grid { text-align: left; margin-top: 8px; }
+.upsell-cta { margin-top: 32px; }
+
 .cta-section {
   text-align: center; padding: 80px 20px;
   background: white; border-top: 1px solid var(--border);
