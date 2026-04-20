@@ -41,6 +41,10 @@ if AUTH_ENABLED:
 PURCHASE_URL = "mailto:sales@example.com?subject=뉴트리시파이 제품 구매 문의"
 CATALOG_URL = "https://example.com/products"
 LANDING_PRODUCTS_URL = "https://yooongza.github.io/aibot-demo/products.html"
+DISPENSER_URL = "https://yooongza.github.io/aibot-demo/#dispenser"
+MEMBERSHIP_URL = "https://yooongza.github.io/aibot-demo/#membership"
+DISPENSER_INQUIRY_URL = "mailto:sales@example.com?subject=뉴트리시파이 전용 디스펜서 사전 예약 문의"
+MEMBERSHIP_INQUIRY_URL = "mailto:sales@example.com?subject=뉴트리시파이 연간 멤버십 가입 문의"
 
 QUICK_START_NEEDS = [
     ("피로", "요즘 피로가 너무 심해요"),
@@ -242,6 +246,16 @@ def _final_actions() -> list[cl.Action]:
             name="open_catalog",
             label="🛍 구매 페이지 열기",
             payload={"url": CATALOG_URL},
+        ),
+        cl.Action(
+            name="dispenser_intro",
+            label="🏺 전용 디스펜서 알아보기",
+            payload={"url": DISPENSER_URL},
+        ),
+        cl.Action(
+            name="membership_join",
+            label="🎟 연간 멤버십 가입하기",
+            payload={"url": MEMBERSHIP_URL},
         ),
         cl.Action(
             name="purchase_inquiry",
@@ -559,6 +573,41 @@ async def on_feedback(action: cl.Action) -> None:
     label = "👍 좋은 평가" if rating == "up" else "👎 개선 의견"
     await cl.Message(
         content=f"{label} 감사합니다! 의견은 추천 품질 개선에 활용됩니다."
+    ).send()
+
+
+@cl.action_callback("dispenser_intro")
+async def on_dispenser_intro(action: cl.Action) -> None:
+    url = action.payload.get("url", DISPENSER_URL)
+    await cl.Message(
+        content=(
+            "🏺 **전용 디스펜서로 매일 한 번에 섭취하세요**\n\n"
+            "여러 영양제 통을 따로 여닫는 번거로움을 줄이기 위해 만든 무전원 자판기형 디스펜서입니다. "
+            "식탁 위에 놓아도 잘 어울리는 미니멀 디자인이고, 리필 카트리지만 갈아 끼우면 되어요.\n\n"
+            "- 🧴 여러 통을 열 필요 없이 한 번에 섭취 → **시간 절약**\n"
+            "- 🔌 무전원 구조 + 리필 카트리지 교체식\n"
+            "- 🍽 식탁 위에 두기 좋은 미니멀 디자인\n\n"
+            f"👉 [디스펜서 자세히 보기]({url})\n"
+            f"📩 [사전 예약/문의 보내기]({DISPENSER_INQUIRY_URL})"
+        )
+    ).send()
+
+
+@cl.action_callback("membership_join")
+async def on_membership_join(action: cl.Action) -> None:
+    url = action.payload.get("url", MEMBERSHIP_URL)
+    await cl.Message(
+        content=(
+            "🎟 **연간 멤버십으로 더 합리적으로 시작하세요**\n\n"
+            "코스트코 모델을 벤치마킹한 연간 멤버십입니다. "
+            "광고·유통 비용을 줄여 가격으로 환원하는 구조라, 가입하시면 정기 구독 가격과 우선 배송 혜택을 받으실 수 있어요. "
+            "**\"건강을 위해 낭비되는 돈과 시간을 절약한다\"** 라는 슬로건 그대로의 혜택입니다.\n\n"
+            "- 💸 회원 전용 정기 구독 단가 적용\n"
+            "- 🚚 우선 배송 / 재고 우선 확보\n"
+            "- 🧪 신규 처방·리뉴얼 제품 우선 안내\n\n"
+            f"👉 [멤버십 자세히 보기]({url})\n"
+            f"📩 [가입 문의 보내기]({MEMBERSHIP_INQUIRY_URL})"
+        )
     ).send()
 
 
