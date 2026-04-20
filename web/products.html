@@ -33,7 +33,7 @@
 <section>
   <div class="container">
     <div class="product-grid" id="product-list">
-      <!-- products load here from /api/products -->
+      <!-- products load here from products-data.json -->
     </div>
     <div style="text-align: center; margin-top: 40px;">
       <button class="hero-cta" onclick="openCopilot()">💬 맞춤 상담 받기</button>
@@ -47,22 +47,57 @@
 </footer>
 
 <script>
+  // Slug + icon maps kept in sync with Products.json so chatbot deep links
+  // (e.g. products.html#eye) scroll to the matching card.
+  const PRODUCT_SLUGS = {
+    "뉴트리시파이 데일리 베이스": "daily-base",
+    "뉴트리시파이 오메가3 비타민D": "omega3",
+    "뉴트리시파이 관절 토탈 케어": "joint",
+    "뉴트리시파이 눈 스마트 포커스": "eye",
+    "뉴트리시파이 에너지 부스트업": "energy",
+    "뉴트리시파이 장 프로텍션": "gut",
+    "뉴트리시파이 피부 글로우": "skin",
+  };
+  const PRODUCT_ICONS = {
+    "뉴트리시파이 데일리 베이스": "💊",
+    "뉴트리시파이 오메가3 비타민D": "🐟",
+    "뉴트리시파이 관절 토탈 케어": "🦴",
+    "뉴트리시파이 눈 스마트 포커스": "👁",
+    "뉴트리시파이 에너지 부스트업": "⚡",
+    "뉴트리시파이 장 프로텍션": "🌱",
+    "뉴트리시파이 피부 글로우": "✨",
+  };
+
   fetch("./products-data.json")
     .then((r) => r.json())
     .then((products) => {
       const list = document.getElementById("product-list");
       list.innerHTML = products.map((p) => {
+        const name = p["제품명"];
+        const slug = PRODUCT_SLUGS[name] || "";
+        const icon = PRODUCT_ICONS[name] || "🌿";
         const tags = (p["연관_니즈"] || []).slice(0, 2).map((n) => `#${n}`).join(" · ");
         const ings = (p["주요_원료"] || []).slice(0, 4)
           .map((i) => `<li><strong>${i.이름}</strong> · ${i.함량 || ""}</li>`).join("");
         return `
-          <div class="product">
+          <div class="product" ${slug ? `id="${slug}"` : ""}>
             <span class="product-tag">${tags}</span>
-            <h3>${p["제품명"]}</h3>
+            <h3><span style="margin-right:6px">${icon}</span>${name}</h3>
             <ul>${ings}</ul>
           </div>
         `;
       }).join("");
+
+      // If the URL has a #slug fragment (from chatbot deep link), scroll+highlight
+      if (location.hash) {
+        const el = document.querySelector(location.hash);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.style.outline = "2px solid var(--primary)";
+          el.style.outlineOffset = "4px";
+          setTimeout(() => { el.style.outline = ""; el.style.outlineOffset = ""; }, 2400);
+        }
+      }
     })
     .catch(() => {
       document.getElementById("product-list").innerHTML =
