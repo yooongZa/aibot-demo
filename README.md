@@ -2,7 +2,7 @@
 title: Nutrify Consultation Chatbot
 emoji: 🌿
 colorFrom: green
-colorTo: emerald
+colorTo: blue
 sdk: docker
 pinned: false
 app_port: 7860
